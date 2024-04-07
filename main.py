@@ -19,7 +19,7 @@ config = ConfigParser()
 config.read('config.ini')
 
 #Running queues
-active_games = []
+active_games = {}
 
 #API Connectivity Test Command
 @bot.command(
@@ -49,14 +49,14 @@ async def newgame(ctx: interactions.CommandContext):
         await ctx.send("Invalid queue type. View help message with !jockey for available game types.")
         return
 
-    active_games.append(new_queue)
+    active_games[new_queue.q_id] = new_queue
 
 ### Wait for admin response on game_modal component menus ###
     
 @bot.component("gameconf_game_mode")
 async def team_type_response(ctx: interactions.ComponentContext, value):
     value = value[0].split('_')
-    q_id = value[-1]
+    q_id = int(value[-1])
     value = '_'.join(value[:-1])
 
     # try:
@@ -66,7 +66,7 @@ async def team_type_response(ctx: interactions.ComponentContext, value):
     
     await ctx.send(f"Game Mode: {value} (q_id: {q_id})", ephemeral=True)
 
-    #TODO: pass response to GameQueue
+    active_games[q_id].game_type = value
 
 @bot.component("gameconf_team_type")
 async def team_type_response(ctx: interactions.ComponentContext, value):
@@ -76,7 +76,7 @@ async def team_type_response(ctx: interactions.ComponentContext, value):
 
     await ctx.send(f"Team Type: {value} (q_id: {q_id})", ephemeral=True)
 
-    #TODO: pass response to GameQueue
+    active_games[q_id].team_type = value
 
 @bot.component("gameconf_maps")
 async def maps_response(ctx: interactions.ComponentContext, value):
@@ -89,7 +89,7 @@ async def maps_response(ctx: interactions.ComponentContext, value):
 
     await ctx.send(f"Maps: {maps} (q_id: {q_id})", ephemeral=True)
 
-    #TODO: pass response to GameQueue
+    active_games[q_id].map_options = maps
 
 ##############
 

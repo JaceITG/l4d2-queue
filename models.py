@@ -77,6 +77,9 @@ class GameQueue:
         self.status = 0
         
         self.game_type = ""
+        self.team_type = ""
+        self.map_options = []
+        
         self.players = []
         self.team1 = []
         self.team2 = []
