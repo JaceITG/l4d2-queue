@@ -5,12 +5,47 @@ import interactions
 config = ConfigParser()
 config.read('config.ini')
 
-class GameModal(discord.ui.Modal, title="Create Game"):
-    async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f'Creating game')
-    pass
+import discord
+from discord.ext import commands
 
-async def game_modal_comp():
+from utils import queue_message
+
+### Queue ###
+#
+# status indicating state of Queue:
+# 0 -> created, no announcement made
+# 1 -> announced, waiting for joins
+# 2 -> queue popped, waiting for map votes
+# 3 -> game in progress
+# 4 -> game ended, results logged
+
+class GameQueue:
+
+    def __init__(self, q_id: int, q_channel: discord.TextChannel, game_type: str):
+        self.q_id = q_id
+        self.game_type = game_type
+
+        try:
+            self.q_message = queue_message(self.game_type)
+        except ValueError:
+            raise
+
+        self.announcement_msg = ""
+        self.status = 0
+        
+        self.players = []
+        self.team1 = []
+        self.team2 = []
+        
+
+    async def handle_reaction():
+        pass
+
+    # Record data from scores [team1, team2]
+    async def log_match(scores):
+        pass
+
+async def game_setup_comp():
 
     # How teams are selected
     random = interactions.SelectMenu(
