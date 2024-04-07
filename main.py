@@ -4,7 +4,7 @@ from configparser import ConfigParser
 
 # import utils
 import interactions
-from models import game_modal_comp
+from models import game_modal_comp, gen_q_id, GameQueue
 
 #Obtain login token from hidden file
 with open('.env', 'r') as f:
@@ -13,6 +13,9 @@ with open('.env', 'r') as f:
 #Load config file
 config = ConfigParser()
 config.read('config.ini')
+
+#Running queues
+active_games = []
 
 #Init bot
 bot = interactions.Client(token=token)
@@ -43,11 +46,19 @@ async def ping(ctx: interactions.CommandContext):
         ],
         scope=int(config['ServerInfo']['server_id']),   #TEMP: prevent needing to wait for /command to register with API
 )
+@discord.app_commands.checks.has_role(
+    bot.get_guild(int(config["ServerInfo"]['server_id'])).get_role(int(config['ServerInfo']['Matchmaker']))
+)
 async def newgame(ctx: interactions.CommandContext, game_type: str = "standard"):
-    game_modal = await game_modal_comp()
-    await ctx.send(components=game_modal)
+    global active_games
 
-    print("Done sending")
+    try:
+        new_queue = await GameQueue(q_id=gen_q_id(), q_ctx=ctx, game_type=game_type)
+    except ValueError: 
+        await ctx.send("Invalid queue type. View help message with !jockey for available game types.")
+        return
+
+    active_games.append(new_queue)
 
 ### Wait for admin response on game_modal component menus ###
     
