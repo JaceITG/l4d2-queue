@@ -93,7 +93,10 @@ async def player_join(ctx: interactions.ComponentContext):
     try:
         await active_games[q_id].handle_join(ctx, "player_join")
     except IndexError:
-        await ctx.send(content="**Cannot join queue: already full or started**", components=[queue_unjoinable_comp()], ephemeral=True)
+        await ctx.send(content="**Cannot join queue: already full or started**",
+                    components=[queue_unjoinable_comp()],
+                    embeds=interactions.Embed().set_footer(text=f"ID: {q_id}"),
+                    ephemeral=True)
     
     await ctx.defer(ephemeral=True, edit_origin=True)
 
