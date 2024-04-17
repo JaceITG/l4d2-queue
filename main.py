@@ -37,7 +37,7 @@ async def ping(ctx: interactions.CommandContext):
 @bot.command(
         name="start",
         description="Create a new queue for a L4D2 Versus game",
-        scope=int(config['ServerInfo']['server_id']),   #TEMP: prevent needing to wait for /command to register with API
+        scope=[int(config['ServerInfo']['server_id']), 1224464761425494177],   #TEMP: prevent needing to wait for /command to register with API
 )
 @discord.ext.commands.has_role(config['ServerInfo']['matchmaker_role_id'])
 async def newgame(ctx: interactions.CommandContext):
