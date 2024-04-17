@@ -22,7 +22,7 @@ def game_setup_comp(q_id: int):
         placeholder = "Game mode selection",
         custom_id = "gameconf_game_mode",
         options = [
-            interactions.SelectOption(label=values['title'], value=f"{key}_{q_id}") for key, values in gamemode_strs.items()
+            interactions.SelectOption(label=values['title'], value=f"{key}") for key, values in gamemode_strs.items()
             ],
     )
 
@@ -32,8 +32,8 @@ def game_setup_comp(q_id: int):
         placeholder = "Team selection",
         custom_id = "gameconf_team_type",
         options = [
-            interactions.SelectOption(label="Random", value=f"random_{q_id}"),
-            interactions.SelectOption(label="Selected", value=f"selected_{q_id}"),
+            interactions.SelectOption(label="Random", value=f"random"),
+            interactions.SelectOption(label="Selected", value=f"selected"),
             ],
     )
 
@@ -44,7 +44,7 @@ def game_setup_comp(q_id: int):
         min_values=3,
         max_values=3,
         options = [
-            interactions.SelectOption(label=map_name, value=f"{map_name}_{q_id}") for map_name in config['GameOptions']['maps'].split(',')
+            interactions.SelectOption(label=map_name, value=f"{map_name}") for map_name in config['GameOptions']['maps'].split(',')
         ]
     )
 
@@ -85,7 +85,9 @@ class GameQueue:
         self.team2 = []
 
         self.game_modal = game_setup_comp(q_id)
-        self.loop.create_task( self.q_ctx.send(components=self.game_modal, ephemeral=True) )
+
+        embed = interactions.Embed().set_footer(text=self.q_id)
+        self.loop.create_task( self.q_ctx.send(components=self.game_modal, embeds=embed, ephemeral=True) )
     
     async def announce_queue(self):
         self.status = 1

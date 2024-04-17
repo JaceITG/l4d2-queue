@@ -55,34 +55,25 @@ async def newgame(ctx: interactions.CommandContext):
     
 @bot.component("gameconf_game_mode")
 async def game_mode_response(ctx: interactions.ComponentContext, value):
-    value = value[0].split('_')
-    q_id = int(value[-1])
-    value = '_'.join(value[:-1])
+    q_id = int(ctx.message.embeds[0].footer.text)
 
-    active_games[q_id].game_type = value
+    active_games[q_id].game_type = value[0]
     await announce_if_ready(active_games[q_id])
     await ctx.defer(ephemeral=True, edit_origin=True)
 
 @bot.component("gameconf_team_type")
 async def team_type_response(ctx: interactions.ComponentContext, value):
-    value = value[0].split('_')
-    q_id = int(value[-1])
-    value = '_'.join(value[:-1])
+    q_id = int(ctx.message.embeds[0].footer.text)
 
-    active_games[q_id].team_type = value
+    active_games[q_id].team_type = value[0]
     await announce_if_ready(active_games[q_id])
     await ctx.defer(ephemeral=True, edit_origin=True)
 
 @bot.component("gameconf_maps")
 async def maps_response(ctx: interactions.ComponentContext, value):
-    maps = []
-    q_id = None
-    for v in value:
-        m = v.split('_')
-        q_id = int(m[-1])
-        maps.append(' '.join(m[:-1]))
+    q_id = int(ctx.message.embeds[0].footer.text)
 
-    active_games[q_id].map_options = maps
+    active_games[q_id].map_options = value
     await announce_if_ready(active_games[q_id])
     await ctx.defer(ephemeral=True, edit_origin=True)
 
