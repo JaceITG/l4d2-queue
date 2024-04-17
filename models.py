@@ -68,16 +68,16 @@ class GameQueue:
         self.q_ctx = q_ctx
         self.loop = asyncio.get_event_loop()
 
+        self.status = 0
+
         try:
-            self.q_message = ""
+            self.q_message = None
         except ValueError:
             raise
-
-        self.announcement_msg = ""
-        self.status = 0
         
-        self.game_type = ""
-        self.team_type = ""
+        # Options set by admin
+        self.game_type = None
+        self.team_type = None
         self.map_options = []
         
         self.players = []
@@ -87,12 +87,20 @@ class GameQueue:
         self.game_modal = game_setup_comp(q_id)
         self.loop.create_task( self.q_ctx.send(components=self.game_modal, ephemeral=True) )
     
-        
+    async def announce_queue(self):
+        self.status = 1
 
-    async def handle_reaction():
+        try:
+            self.q_message = queue_message(self.game_type)
+        except ValueError:
+            raise
+
+        await self.q_ctx.send(self.q_message, ephemeral=True)
+
+    async def handle_reaction(self):
         pass
 
     # Record data from scores [team1, team2]
-    async def log_match(scores):
+    async def log_match(self, scores):
         pass
 

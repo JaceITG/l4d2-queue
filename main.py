@@ -5,7 +5,7 @@ from configparser import ConfigParser
 # import utils
 import interactions
 from models import GameQueue
-from utils import gen_q_id
+from utils import gen_q_id, announce_if_ready
 
 #Obtain login token from hidden file
 with open('.env', 'r') as f:
@@ -54,29 +54,24 @@ async def newgame(ctx: interactions.CommandContext):
 ### Wait for admin response on game_modal component menus ###
     
 @bot.component("gameconf_game_mode")
+async def game_mode_response(ctx: interactions.ComponentContext, value):
+    value = value[0].split('_')
+    q_id = int(value[-1])
+    value = '_'.join(value[:-1])
+
+    active_games[q_id].game_type = value
+    await announce_if_ready(active_games[q_id])
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+@bot.component("gameconf_team_type")
 async def team_type_response(ctx: interactions.ComponentContext, value):
     value = value[0].split('_')
     q_id = int(value[-1])
     value = '_'.join(value[:-1])
 
-    # try:
-    #     queue.q_message = queue_message(self.game_type)
-    # except ValueError:
-    #     raise
-    
-    await ctx.send(f"Game Mode: {value} (q_id: {q_id})", ephemeral=True)
-
-    active_games[q_id].game_type = value
-
-@bot.component("gameconf_team_type")
-async def team_type_response(ctx: interactions.ComponentContext, value):
-    value = value[0].split('_')
-    q_id = value[-1]
-    value = '_'.join(value[:-1])
-
-    await ctx.send(f"Team Type: {value} (q_id: {q_id})", ephemeral=True)
-
     active_games[q_id].team_type = value
+    await announce_if_ready(active_games[q_id])
+    await ctx.defer(ephemeral=True, edit_origin=True)
 
 @bot.component("gameconf_maps")
 async def maps_response(ctx: interactions.ComponentContext, value):
@@ -84,12 +79,12 @@ async def maps_response(ctx: interactions.ComponentContext, value):
     q_id = None
     for v in value:
         m = v.split('_')
-        q_id = m[-1]
+        q_id = int(m[-1])
         maps.append(' '.join(m[:-1]))
 
-    await ctx.send(f"Maps: {maps} (q_id: {q_id})", ephemeral=True)
-
     active_games[q_id].map_options = maps
+    await announce_if_ready(active_games[q_id])
+    await ctx.defer(ephemeral=True, edit_origin=True)
 
 ##############
 

@@ -11,6 +11,19 @@ async def gen_q_id():
     next_available_id += 1
     return next_available_id-1
 
+async def announce_if_ready(queue):
+    if queue.status != 0:
+        raise ValueError("Queue not in correct state to announce")
+
+    queue_is_ready = (
+        queue.game_type is not None and
+        queue.team_type is not None and
+        len(queue.map_options) >= 3
+    )
+
+    if queue_is_ready:
+        await queue.announce_queue()
+
 gamemode_strs = {
         "standard": {"title": "Standard Vanilla+", "desc": "Minor QoL and balance plugins; see ⁠dedicated-server-info for more information!"},
         "realism" : {"title": "Realism", "desc": "Survivors can't see player or item outlines; common infected are more resilient; Witches kill instantly!"},
