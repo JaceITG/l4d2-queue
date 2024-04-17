@@ -45,15 +45,15 @@ def queue_message(gamemode):
     # Fill in template with attributes for selected game type
         # f"{carriers_role.mention} {ksobs_role.mention}\n" #FIXME: Remove or change mentions for new server
     return (
-        f"""A **__{gamemode_strs[gamemode]['title']}__** versus game is being set up for 8 players!\n
-        {("No Charger, Jockey, or Spitter, but Boomers can vomit instantly after spawning/while being shoved, Hunters deal damage faster, and Smokers are"
-            "hitscan.  Tanks throw rocks quicker and move faster when on fire.  Witches kill downed Survivors faster."
-            "Small firearm arsenal, superior pistols, no melee weapons, generally faster-paced than L4D2 Versus with less camping/baiting. The score is" 
-            "determined by Survivor HP at the end of a level and a per-map difficulty modifier.") if gamemode == "l4d1" else ""}
-        ({gamemode_strs[gamemode]['desc']})\n\n
-        To join the queue, react to this message with ✅\n
-        To join as a sub, react to this message with <:Substitute:984524545866219631>\n\n
-        Once 8 players have reacted, maps will be voted upon, and teams will be assigned.\n
-        Note:  If 8 players have not joined in two hours, this queue will be remade.  **Do not queue unless you {"own Left 4 Dead 1 and" if gamemode=="l4d1" else ""} have at least two hours available.**\n\n
-        Please report any issues to the owner/developers"""
+f"""A **__{gamemode_strs[gamemode]['title']}__** versus game is being set up for 8 players!
+{("No Charger, Jockey, or Spitter, but Boomers can vomit instantly after spawning/while being shoved, Hunters deal damage faster, and Smokers are"
+    "hitscan.  Tanks throw rocks quicker and move faster when on fire.  Witches kill downed Survivors faster."
+    "Small firearm arsenal, superior pistols, no melee weapons, generally faster-paced than L4D2 Versus with less camping/baiting. The score is" 
+    "determined by Survivor HP at the end of a level and a per-map difficulty modifier.") if gamemode == "l4d1" else ""}
+({gamemode_strs[gamemode]['desc']})\n
+To join the queue, react to this message with ✅
+To join as a sub, react to this message with <:Substitute:984524545866219631>\n
+Once 8 players have reacted, maps will be voted upon, and teams will be assigned.
+Note:  If 8 players have not joined in two hours, this queue will be remade.  **Do not queue unless you {"own Left 4 Dead 1 and" if gamemode=="l4d1" else ""} have at least two hours available.**\n
+Please report any issues to the owner/developers"""
     )
