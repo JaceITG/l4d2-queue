@@ -43,11 +43,7 @@ async def ping(ctx: interactions.CommandContext):
 async def newgame(ctx: interactions.CommandContext):
     global active_games
 
-    try:
-        new_queue = GameQueue(q_id=await gen_q_id(), q_ctx=ctx)
-    except ValueError: 
-        await ctx.send("Invalid queue type. View help message with !jockey for available game types.")
-        return
+    new_queue = GameQueue(q_id=await gen_q_id(), q_ctx=ctx)
 
     active_games[new_queue.q_id] = new_queue
 

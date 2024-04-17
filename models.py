@@ -69,11 +69,6 @@ class GameQueue:
         self.loop = asyncio.get_event_loop()
 
         self.status = 0
-
-        try:
-            self.q_message = None
-        except ValueError:
-            raise
         
         # Options set by admin
         self.game_type = None
