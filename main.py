@@ -112,7 +112,10 @@ async def sub_join(ctx: interactions.ComponentContext):
 async def player_leave(ctx: interactions.ComponentContext):
     q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
 
-    await active_games[q_id].handle_join(ctx, "player_leave")
+    try:
+        await active_games[q_id].handle_join(ctx, "player_leave")
+    except IndexError:
+        await ctx.send(content="**Cannot leave the queue after it has popped.**\nPlease contact matchmaker if you need a sub.", ephemeral=True)
 
     await ctx.defer(ephemeral=True, edit_origin=True)
 

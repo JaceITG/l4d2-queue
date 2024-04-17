@@ -121,6 +121,10 @@ class GameQueue:
             await self.update_announcement(ctx.message)
 
         elif join_type == "player_leave":
+
+            # Prevent primary player leaves after queue pops
+            if self.status > 1 and ctx.user in self.players:
+                raise IndexError
             
             try:
                 self.players.remove(ctx.user)
