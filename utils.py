@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import interactions
 
 config = ConfigParser()
 config.read('config.ini')
@@ -23,6 +24,82 @@ async def announce_if_ready(queue):
 
     if queue_is_ready:
         await queue.announce_queue()
+
+
+### Queue Interaction Components ###
+
+def game_setup_comp(q_id: int):
+
+    # Game mode
+    gamemode = interactions.SelectMenu(
+        placeholder = "Game mode selection",
+        custom_id = "gameconf_game_mode",
+        options = [
+            interactions.SelectOption(label=values['title'], value=f"{key}") for key, values in gamemode_strs.items()
+            ],
+    )
+
+
+    # How teams are selected
+    random = interactions.SelectMenu(
+        placeholder = "Team selection",
+        custom_id = "gameconf_team_type",
+        options = [
+            interactions.SelectOption(label="Random", value=f"random"),
+            interactions.SelectOption(label="Selected", value=f"selected"),
+            ],
+    )
+
+    # Maps available
+    maps = interactions.SelectMenu(
+        placeholder = "Map choice",
+        custom_id = "gameconf_maps",
+        min_values=3,
+        max_values=3,
+        options = [
+            interactions.SelectOption(label=map_name, value=f"{map_name}") for map_name in config['GameOptions']['maps'].split(',')
+        ]
+    )
+
+    component = interactions.spread_to_rows(gamemode, random, maps)
+
+    return component
+
+def queue_join_comp():
+
+    join_button = interactions.Button(
+        custom_id="join_button",
+        label="Join Queue",
+        style=interactions.ButtonStyle.SUCCESS
+    )
+
+    join_sub_button = interactions.Button(
+        custom_id="sub_button",
+        label="Join Queue As Sub",
+        style=interactions.ButtonStyle.SECONDARY
+    )
+
+    leave_button = interactions.Button(
+        custom_id="leave_button",
+        label="Leave Queue",
+        style=interactions.ButtonStyle.DANGER
+    )
+
+    component = interactions.ActionRow(components=[join_button, join_sub_button, leave_button])
+    
+    return component
+
+def queue_unjoinable_comp():
+    sub_button = interactions.Button(
+        custom_id="sub_button",
+        label="Join Queue As Sub Instead",
+        style=interactions.ButtonStyle.SECONDARY
+    )
+    
+    return sub_button
+    
+
+##############
 
 gamemode_strs = {
         "standard": {"title": "Standard Vanilla+", "desc": "Minor QoL and balance plugins; see ⁠dedicated-server-info for more information!"},

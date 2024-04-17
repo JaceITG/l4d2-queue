@@ -13,44 +13,9 @@ bot = interactions.Client(token=token)
 import discord
 from discord.ext import commands
 
-from utils import queue_message, gamemode_strs
+from utils import queue_message
+from utils import game_setup_comp, queue_join_comp
 
-def game_setup_comp(q_id: int):
-
-    # Game mode
-    gamemode = interactions.SelectMenu(
-        placeholder = "Game mode selection",
-        custom_id = "gameconf_game_mode",
-        options = [
-            interactions.SelectOption(label=values['title'], value=f"{key}") for key, values in gamemode_strs.items()
-            ],
-    )
-
-
-    # How teams are selected
-    random = interactions.SelectMenu(
-        placeholder = "Team selection",
-        custom_id = "gameconf_team_type",
-        options = [
-            interactions.SelectOption(label="Random", value=f"random"),
-            interactions.SelectOption(label="Selected", value=f"selected"),
-            ],
-    )
-
-    # Maps available
-    maps = interactions.SelectMenu(
-        placeholder = "Map choice",
-        custom_id = "gameconf_maps",
-        min_values=3,
-        max_values=3,
-        options = [
-            interactions.SelectOption(label=map_name, value=f"{map_name}") for map_name in config['GameOptions']['maps'].split(',')
-        ]
-    )
-
-    component = interactions.spread_to_rows(gamemode, random, maps)
-
-    return component
 
 ### Queue ###
 #
@@ -78,12 +43,16 @@ class GameQueue:
         self.players = []
         self.team1 = []
         self.team2 = []
+        self.subs = []
+        self.max_players = 2
 
         self.game_modal = game_setup_comp(q_id)
 
-        embed = interactions.Embed().set_footer(text=self.q_id)
+        embed = interactions.Embed()
+        embed.set_footer(text=f"ID: {self.q_id}")
         self.loop.create_task( self.q_ctx.send(components=self.game_modal, embeds=embed, ephemeral=True) )
     
+    # Send out announcement message for joins
     async def announce_queue(self):
         self.status = 1
 
@@ -92,9 +61,90 @@ class GameQueue:
         except ValueError:
             raise
 
-        await self.q_ctx.send(self.q_message, ephemeral=True)
+        # Announcement Embed
+        embed = interactions.Embed()
+        embed.set_footer(text=f"ID: {self.q_id}")
+        embed.set_author(name="queue_announcement")
 
-    async def handle_reaction(self):
+        # Join Queue Buttons
+        button_row = queue_join_comp()
+
+        await self.q_ctx.send(content=self.q_message, embeds=embed, components=button_row)
+    
+    # Update announcement message with list/count of queued players
+    async def update_announcement(self, announcement_msg: discord.Message):
+
+        # Players embed
+        embed = interactions.Embed()
+        embed.set_footer(text=f"ID: {self.q_id}")
+        embed.set_author(name="queue_announcement")
+
+        embed.add_field(name=f"Players ({len(self.players)})", value='\n'.join([user.username for user in self.players]), inline=True)
+        embed.add_field(name=f"Subs ({len(self.subs)})", value='\n'.join([user.username for user in self.subs]), inline=True)
+
+        button_row = queue_join_comp()
+
+        await announcement_msg.edit(embeds=embed, components=button_row)
+
+    # Process interactions with buttons on the announcement message
+    async def handle_join(self, ctx: interactions.ComponentContext, join_type: str):
+
+        if join_type == "player_join":
+            
+            # Check if queue is joinable
+            if self.status != 1 or len(self.players) >= self.max_players:
+                raise IndexError
+            
+            # Resolve silently if player already in queue
+            if ctx.user in self.players:
+                return
+            
+            # If already in subs, remove from sub list
+            if ctx.user in self.subs:
+                self.subs.remove(ctx.user)
+            
+            self.players.append(ctx.user)
+            await self.update_announcement(ctx.message)
+
+            if len(self.players) >= self.max_players:
+                # Queue popped
+                self.status = 2
+                pass
+
+        elif join_type == "sub_join":
+            
+            # Don't allow players already in primary queue to sub
+            if ctx.user in self.players:
+                raise IndexError
+            
+            self.subs.append(ctx.user)
+            await self.update_announcement(ctx.message)
+
+        elif join_type == "player_leave":
+            
+            try:
+                self.players.remove(ctx.user)
+            except ValueError:
+                pass
+            
+            try:
+                self.subs.remove(ctx.user)
+            except ValueError:
+                pass
+            
+            await self.update_announcement(ctx.message)
+
+    ### FIXME: Maybe not needed
+    async def handle_reaction(self, reaction: discord.Reaction, user: discord.Member):
+        embed = None if len(reaction.message.embeds)<1 else reaction.message.embeds[0]
+
+        # If reacted message is the queue announcement
+        if embed and embed.author.name == "queue_announcement":
+            # Return if queue not in join stage
+            if not self.status == 1:
+                return
+            
+            pass
         pass
 
     # Record data from scores [team1, team2]

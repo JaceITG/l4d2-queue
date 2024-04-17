@@ -5,7 +5,7 @@ from configparser import ConfigParser
 # import utils
 import interactions
 from models import GameQueue
-from utils import gen_q_id, announce_if_ready
+from utils import gen_q_id, announce_if_ready, queue_unjoinable_comp
 
 #Obtain login token from hidden file
 with open('.env', 'r') as f:
@@ -47,11 +47,20 @@ async def newgame(ctx: interactions.CommandContext):
 
     active_games[new_queue.q_id] = new_queue
 
+### Handle incoming reaction adds ###
+
+@bot.event()
+async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
+    q_id = int(reaction.message.embeds[0].footer.text.split(' ')[-1])
+    
+    queue = active_games[q_id]
+    queue.handle_reaction(reaction, user)
+
 ### Wait for admin response on game_modal component menus ###
     
 @bot.component("gameconf_game_mode")
 async def game_mode_response(ctx: interactions.ComponentContext, value):
-    q_id = int(ctx.message.embeds[0].footer.text)
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
 
     active_games[q_id].game_type = value[0]
     await announce_if_ready(active_games[q_id])
@@ -59,7 +68,7 @@ async def game_mode_response(ctx: interactions.ComponentContext, value):
 
 @bot.component("gameconf_team_type")
 async def team_type_response(ctx: interactions.ComponentContext, value):
-    q_id = int(ctx.message.embeds[0].footer.text)
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
 
     active_games[q_id].team_type = value[0]
     await announce_if_ready(active_games[q_id])
@@ -67,10 +76,44 @@ async def team_type_response(ctx: interactions.ComponentContext, value):
 
 @bot.component("gameconf_maps")
 async def maps_response(ctx: interactions.ComponentContext, value):
-    q_id = int(ctx.message.embeds[0].footer.text)
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
 
     active_games[q_id].map_options = value
     await announce_if_ready(active_games[q_id])
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+##############
+
+### Catch Button Join Component Interactions ###
+
+@bot.component("join_button")
+async def player_join(ctx: interactions.ComponentContext):
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+
+    try:
+        await active_games[q_id].handle_join(ctx, "player_join")
+    except IndexError:
+        await ctx.send(content="**Cannot join queue: already full or started**", components=[queue_unjoinable_comp()], ephemeral=True)
+    
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+@bot.component("sub_button")
+async def sub_join(ctx: interactions.ComponentContext):
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+
+    try:
+        await active_games[q_id].handle_join(ctx, "sub_join")
+    except IndexError:
+        await ctx.send(content="**Cannot join queue as a sub when you are already a player**", ephemeral=True)
+    
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+@bot.component("leave_button")
+async def player_leave(ctx: interactions.ComponentContext):
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+
+    await active_games[q_id].handle_join(ctx, "player_leave")
+
     await ctx.defer(ephemeral=True, edit_origin=True)
 
 ##############
