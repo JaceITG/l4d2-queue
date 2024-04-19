@@ -15,6 +15,7 @@ from discord.ext import commands
 
 from utils import queue_message
 from utils import game_setup_comp, queue_join_comp
+from utils import get_random_maps, map_vote_comp
 
 
 ### Queue ###
@@ -22,7 +23,7 @@ from utils import game_setup_comp, queue_join_comp
 # status indicating state of Queue:
 # 0 -> created, no announcement made
 # 1 -> announced, waiting for joins
-# 2 -> queue popped, waiting for map votes
+# 2 -> queue popped, waiting for map votes and team creation
 # 3 -> game in progress
 # 4 -> game ended, results logged
 
@@ -38,13 +39,13 @@ class GameQueue:
         # Options set by admin
         self.game_type = None
         self.team_type = None
-        self.map_options = []
+        self.map_options = {}       # map: [Player,]
         
         self.players = []
         self.team1 = []
         self.team2 = []
         self.subs = []
-        self.max_players = 2
+        self.max_players = 1
 
         self.game_modal = game_setup_comp(q_id)
 
@@ -108,8 +109,7 @@ class GameQueue:
 
             if len(self.players) >= self.max_players:
                 # Queue popped
-                self.status = 2
-                pass
+                await self.pop_queue()
 
         elif join_type == "sub_join":
             
@@ -138,18 +138,34 @@ class GameQueue:
             
             await self.update_announcement(ctx.message)
 
-    ### FIXME: Maybe not needed
-    async def handle_reaction(self, reaction: discord.Reaction, user: discord.Member):
-        embed = None if len(reaction.message.embeds)<1 else reaction.message.embeds[0]
+    # Send message for map voting and notify 
+    async def pop_queue(self):
 
-        # If reacted message is the queue announcement
-        if embed and embed.author.name == "queue_announcement":
-            # Return if queue not in join stage
-            if not self.status == 1:
-                return
-            
-            pass
-        pass
+        self.status = 2
+
+        self.map_options = {m:[] for m in get_random_maps()}
+
+        embed = interactions.Embed(description="Vote for a map")
+        embed.set_footer(f"ID: {self.q_id}")
+
+        await self.q_ctx.send(embeds=embed, components=[map_vote_comp(self.map_options.keys())])
+
+    # Process Select Menu input from player
+    async def handle_vote(self, user: interactions.User, vote: str):
+
+        # Check queue state in voting stage
+        if not self.status == 2:
+            return
+        
+        # Check if user vote already counted
+        for m in self.map_options.keys():
+            vote_list = self.map_options[m]
+            if user in vote_list:
+                vote_list.remove(user)
+                self.map_options[m] = vote_list
+        
+        # Add user vote
+        self.map_options[vote].append(user)
 
     # Record data from scores [team1, team2]
     async def log_match(self, scores):

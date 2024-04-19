@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import json, random
 import interactions
 
 config = ConfigParser()
@@ -88,6 +89,34 @@ def queue_join_comp():
     component = interactions.ActionRow(components=[join_button, join_sub_button, leave_button])
     
     return component
+
+def get_random_maps():
+
+    with open("./campaign_maps.json", 'r') as f:
+        map_json = json.load(f)
+
+        available_vanilla = [m['name'] for m in map_json['vanilla'] if int(m['timeout']) == 0]
+        available_custom = [m['name'] for m in map_json['custom'] if int(m['timeout']) == 0]
+
+    vote_options = random.sample(available_vanilla, 3)
+    vote_options += random.sample(available_custom, 3)
+    return vote_options
+
+            
+
+def map_vote_comp(maps):
+
+    maps = interactions.SelectMenu(
+        placeholder = "Vote for a map",
+        custom_id = "player_map_vote",
+        min_values=1,
+        max_values=1,
+        options = [
+            interactions.SelectOption(label=map_name, value=f"{map_name}") for map_name in maps
+        ]
+    )
+
+    return maps
 
 def queue_unjoinable_comp():
     sub_button = interactions.Button(

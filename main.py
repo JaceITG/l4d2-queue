@@ -6,6 +6,7 @@ from configparser import ConfigParser
 import interactions
 from models import GameQueue
 from utils import gen_q_id, announce_if_ready, queue_unjoinable_comp
+from utils import get_random_maps
 
 #Obtain login token from hidden file
 with open('.env', 'r') as f:
@@ -28,6 +29,14 @@ active_games = {}
 )
 async def ping(ctx: interactions.CommandContext):
     await ctx.send("pong")
+
+@bot.command(
+        name="get_maps",
+        scope=[int(config['ServerInfo']['server_id']), 1224464761425494177], 
+)
+async def get_maps(ctx: interactions.CommandContext):
+    await ctx.send(', '.join(get_random_maps()), ephemeral=True)
+
 
 ### Command: create ###
 # Usage: /create event_name start_time [end_time]
@@ -119,6 +128,23 @@ async def player_leave(ctx: interactions.ComponentContext):
         await active_games[q_id].handle_join(ctx, "player_leave")
     except IndexError:
         await ctx.send(content="**Cannot leave the queue after it has popped.**\nPlease contact matchmaker if you need a sub.", ephemeral=True)
+
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+##############
+
+### Catch Player Map Vote ###
+
+def is_queued_player(ctx: discord.Interaction) -> bool:
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+    return ctx.user in active_games[q_id].players
+
+@bot.component("player_map_vote")
+@discord.app_commands.check(is_queued_player)
+async def player_map_vote(ctx: interactions.ComponentContext, value):
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+
+    await active_games[q_id].handle_vote(ctx.user, value[0])
 
     await ctx.defer(ephemeral=True, edit_origin=True)
 
