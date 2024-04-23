@@ -13,6 +13,7 @@ async def gen_q_id():
     next_available_id += 1
     return next_available_id-1
 
+# Check that game setup variables have been set and prompt queue to advance
 async def announce_if_ready(queue):
     if queue.status != 0:
         raise ValueError("Queue not in correct state to announce")
@@ -67,6 +68,7 @@ def game_setup_comp(q_id: int):
 
     return component
 
+# Buttons for players to join as player or sub
 def queue_join_comp():
 
     join_button = interactions.Button(
@@ -91,20 +93,7 @@ def queue_join_comp():
     
     return component
 
-def get_random_maps():
-
-    with open("./campaign_maps.json", 'r') as f:
-        map_json = json.load(f)
-
-        available_vanilla = [m['name'] for m in map_json['vanilla'] if int(m['timeout']) == 0]
-        available_custom = [m['name'] for m in map_json['custom'] if int(m['timeout']) == 0]
-
-    vote_options = random.sample(available_vanilla, 3)
-    vote_options += random.sample(available_custom, 3)
-    return vote_options
-
-            
-
+# Menu sent to queued players to vote for available maps
 def map_vote_comp(maps):
 
     maps = interactions.SelectMenu(
@@ -119,6 +108,7 @@ def map_vote_comp(maps):
 
     return maps
 
+# Prompt to join as sub when queue unjoinable as player
 def queue_unjoinable_comp():
     sub_button = interactions.Button(
         custom_id="sub_button",
@@ -131,6 +121,20 @@ def queue_unjoinable_comp():
 
 ##############
 
+# Retreive 3 vanilla/custom maps each according to timeout values
+def get_random_maps():
+
+    with open("./campaign_maps.json", 'r') as f:
+        map_json = json.load(f)
+
+        available_vanilla = [m['name'] for m in map_json['vanilla'] if int(m['timeout']) == 0]
+        available_custom = [m['name'] for m in map_json['custom'] if int(m['timeout']) == 0]
+
+    vote_options = random.sample(available_vanilla, 3)
+    vote_options += random.sample(available_custom, 3)
+    return vote_options
+
+# Generate string used in queue announcement message
 gamemode_strs = {
         "standard": {"title": "Standard Vanilla+", "desc": "Minor QoL and balance plugins; see ⁠dedicated-server-info for more information!"},
         "realism" : {"title": "Realism", "desc": "Survivors can't see player or item outlines; common infected are more resilient; Witches kill instantly!"},
