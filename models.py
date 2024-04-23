@@ -145,8 +145,9 @@ class GameQueue:
 
         self.map_options = {m:[] for m in get_random_maps()}
 
-        embed = interactions.Embed(description="Vote for a map")
+        embed = interactions.Embed()
         embed.set_footer(f"ID: {self.q_id}")
+        embed.set_author(name="Vote for a map")
 
         await self.q_ctx.send(embeds=embed, components=[map_vote_comp(self.map_options.keys())])
 
