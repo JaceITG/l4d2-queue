@@ -19,8 +19,8 @@ async def announce_if_ready(queue):
 
     queue_is_ready = (
         queue.game_type is not None and
-        queue.team_type is not None and
-        len(queue.map_options) >= 3
+        queue.team_type is not None
+        #len(queue.map_options) >= 3    NOTICE: deprecated for random+cooldown map selection method
     )
 
     if queue_is_ready:
@@ -52,6 +52,7 @@ def game_setup_comp(q_id: int):
     )
 
     # Maps available
+    # NOTICE: deprecated for random+cooldown map selection method
     maps = interactions.SelectMenu(
         placeholder = "Map choice",
         custom_id = "gameconf_maps",
@@ -62,7 +63,7 @@ def game_setup_comp(q_id: int):
         ]
     )
 
-    component = interactions.spread_to_rows(gamemode, random, maps)
+    component = interactions.spread_to_rows(gamemode, random)
 
     return component
 

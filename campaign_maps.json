@@ -160,22 +160,22 @@
         {
             "name": "Day Break",
             "timeout": 0,
-            "amountPlayed": 2
+            "amountPlayed": 0
         },
         {
             "name": "Drop Dead Gorges",
             "timeout": 0,
-            "amountPlayed": 1
+            "amountPlayed": 0
         },
         {
             "name": "Undead Zone",
             "timeout": 0,
-            "amountPlayed": 1
+            "amountPlayed": 0
         },
         {
             "name": "Plan B",
             "timeout": 0,
-            "amountPlayed": 1
+            "amountPlayed": 0
         },
         {
             "name": "Unforgivable Night",
@@ -185,7 +185,7 @@
         {
             "name": "Cold Front",
             "timeout": 0,
-            "amountPlayed": 1
+            "amountPlayed": 0
         }
     ]
 }
