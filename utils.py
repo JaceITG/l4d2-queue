@@ -89,7 +89,14 @@ def queue_join_comp():
         style=interactions.ButtonStyle.DANGER
     )
 
-    component = interactions.ActionRow(components=[join_button, join_sub_button, leave_button])
+    # TEMP
+    fill_button = interactions.Button(
+        custom_id="fill_button",
+        label="Fill Queue",
+        style=interactions.ButtonStyle.DANGER
+    )
+
+    component = interactions.ActionRow(components=[join_button, join_sub_button, leave_button, fill_button])
     
     return component
 
@@ -117,6 +124,24 @@ def queue_unjoinable_comp():
     )
     
     return sub_button
+
+# Menus for assigning queued players to team
+#   Players are assigned to Team 1 (Survivors); Team 2 will be filled with remaining
+#
+# FIXME: address potential issue of users with identical usernames when addressing players by username
+def assign_teams_comp(queue):
+
+    team1 = interactions.SelectMenu(
+        placeholder = "Survivors",
+        custom_id = "make_team_1",
+        min_values=queue.max_players/2,
+        max_values=queue.max_players/2,
+        options = [
+            interactions.SelectOption(label=user.username, value=f"{user.username}") for user in queue.players
+        ]
+    )
+
+    return team1
     
 
 ##############
@@ -133,6 +158,16 @@ def get_random_maps():
     vote_options = random.sample(available_vanilla, 3)
     vote_options += random.sample(available_custom, 3)
     return vote_options
+
+def start_game_msg(queue):
+    msg = "**Voting has finished and teams have been selected!**\n"
+    msg += f"Map {queue.map} has won the vote\n\n"
+    msg += "**__Survivors__**\n"
+    msg += '\n'.join([user.mention for user in queue.team1])
+    msg += "\n**__Infected__**\n"
+    msg += '\n'.join([user.mention for user in queue.team2])
+
+    return msg
 
 # Generate string used in queue announcement message
 gamemode_strs = {

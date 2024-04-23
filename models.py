@@ -1,6 +1,6 @@
 import discord
 from configparser import ConfigParser
-import interactions, json, asyncio
+import interactions, json, asyncio, random
 
 config = ConfigParser()
 config.read('config.ini')
@@ -13,9 +13,10 @@ bot = interactions.Client(token=token)
 import discord
 from discord.ext import commands
 
-from utils import queue_message
+from utils import queue_message, start_game_msg
 from utils import game_setup_comp, queue_join_comp
 from utils import get_random_maps, map_vote_comp
+from utils import assign_teams_comp
 
 
 ### Queue ###
@@ -40,12 +41,15 @@ class GameQueue:
         self.game_type = None
         self.team_type = None
         self.map_options = {}       # map: [Player,]
+        self.num_votes = 0
+
+        self.map = None
         
         self.players = []
-        self.team1 = []
-        self.team2 = []
+        self.team1 = [] # Survivors
+        self.team2 = [] # Infected
         self.subs = []
-        self.max_players = 1
+        self.max_players = 4
 
         self.game_modal = game_setup_comp(q_id)
 
@@ -71,6 +75,45 @@ class GameQueue:
         button_row = queue_join_comp()
 
         await self.q_ctx.send(content=self.q_message, embeds=embed, components=button_row)
+
+    # Send message for map voting and make teams
+    async def pop_queue(self):
+        self.status = 2
+
+        self.map_options = {m:[] for m in get_random_maps()}
+
+        embed = interactions.Embed()
+        embed.set_footer(text=f"ID: {self.q_id}")
+        embed.set_author(name="Vote for a map")
+
+        await self.q_ctx.send(embeds=embed, components=[map_vote_comp(self.map_options.keys())])
+        await self.make_teams()
+
+        # Wait for all players to vote, or N minutes after teams made
+        async def wait_for_votes():
+            while self.num_votes < self.max_players:
+                await asyncio.sleep(5)
+        
+        try:
+            await asyncio.wait_for(wait_for_votes(), timeout=10)
+        except asyncio.TimeoutError:
+            # Continue to start game
+            pass
+
+        await self.start_game()
+    
+    # Ping players with teams and vote results
+    async def start_game(self):
+        self.status = 3
+
+        # Get winning map (longest list value in map_options)
+        self.map = max(self.map_options, key=lambda k: len(self.map_options[k]))
+
+        embed = interactions.Embed()
+        embed.set_footer(text=f"ID: {self.q_id}")
+
+        await self.q_ctx.send(content=start_game_msg(self) , embeds=embed)
+
     
     # Update announcement message with list/count of queued players
     async def update_announcement(self, announcement_msg: discord.Message):
@@ -138,18 +181,38 @@ class GameQueue:
             
             await self.update_announcement(ctx.message)
 
-    # Send message for map voting and notify 
-    async def pop_queue(self):
+    
+    # Random: shuffle list of players and split teams on half
+    # Selected: send component for admin to select half of the players
+    #           to be on Team 1 (Survivors)           
+    async def make_teams(self):
 
-        self.status = 2
+        if self.team_type == "random":
+            randomized_players = self.players
+            random.shuffle(randomized_players)
+            self.team1 = randomized_players[:4]
+            self.team2 = randomized_players[4:]
+        
+        elif self.team_type == "selected":
+            
+            embed = interactions.Embed(title="Select players to assign to Survivors. Infected will be filled with remaining players.")
+            embed.set_footer(f"ID: {self.q_id}")
 
-        self.map_options = {m:[] for m in get_random_maps()}
+            await self.q_ctx.send(embeds=embed, components=[assign_teams_comp(self)], ephemeral=True)
 
-        embed = interactions.Embed()
-        embed.set_footer(f"ID: {self.q_id}")
-        embed.set_author(name="Vote for a map")
+            ctx = await self.q_ctx.client.wait_for_component("make_team_1")
 
-        await self.q_ctx.send(embeds=embed, components=[map_vote_comp(self.map_options.keys())])
+            # Send user objects to assigned teams
+            for user in self.players:
+                # Put in team 1 (survivors) if selected by admin
+                if user.username in ctx.data.values:
+                    self.team1.append(user)
+                else:
+                    self.team2.append(user)
+                
+            await ctx.defer(ephemeral=True, edit_origin=True)
+        
+
 
     # Process Select Menu input from player
     async def handle_vote(self, user: interactions.User, vote: str):
@@ -164,11 +227,14 @@ class GameQueue:
             if user in vote_list:
                 vote_list.remove(user)
                 self.map_options[m] = vote_list
+                self.num_votes -= 1
         
         # Add user vote
+        self.num_votes += 1
         self.map_options[vote].append(user)
 
+
     # Record data from scores [team1, team2]
-    async def log_match(self, scores):
+    async def end_match(self, scores):
         pass
 

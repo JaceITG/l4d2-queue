@@ -1,4 +1,4 @@
-import json
+import json, random
 import discord
 from configparser import ConfigParser
 
@@ -46,7 +46,7 @@ async def get_maps(ctx: interactions.CommandContext):
 @bot.command(
         name="start",
         description="Create a new queue for a L4D2 Versus game",
-        scope=[int(config['ServerInfo']['server_id']), 1224464761425494177],   #TEMP: prevent needing to wait for /command to register with API
+        scope=[int(config['ServerInfo']['server_id']), 1224464761425494177, 545410383339323403],   #TEMP: prevent needing to wait for /command to register with API
 )
 @discord.ext.commands.has_role(config['ServerInfo']['matchmaker_role_id'])
 async def newgame(ctx: interactions.CommandContext):
@@ -131,11 +131,48 @@ async def player_leave(ctx: interactions.ComponentContext):
 
     await ctx.defer(ephemeral=True, edit_origin=True)
 
+# TEMP: Admin Fill queue with random users
+@bot.component("fill_button")
+async def fill_players(ctx: interactions.ComponentContext):
+    q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+    queue = active_games[q_id]
+
+    guild = await ctx.get_guild()
+    members = guild.get_members()
+    members = await members.flatten()
+
+    fills = queue.max_players - len(queue.players)
+    added = 0
+    while added < fills:
+        member = random.choice(members)
+        try:
+            ctx.user = member.user
+            await active_games[q_id].handle_join(ctx, "player_join")
+            added += 1
+        except IndexError:
+            continue
+    
+    await ctx.defer(ephemeral=True, edit_origin=True)
+
+
+##############
+
+### Get Team Assignment from Admin ###
+
+# @bot.component("make_team_1")
+# async def make_team(ctx: interactions.ComponentContext, value):
+#     q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
+
+#     await active_games[q_id].make_teams(team1=value)
+
+#     await ctx.defer(ephemeral=True, edit_origin=True)
+
 ##############
 
 ### Catch Player Map Vote ###
 
 def is_queued_player(ctx: discord.Interaction) -> bool:
+
     q_id = int(ctx.message.embeds[0].footer.text.split(' ')[-1])
     return ctx.user in active_games[q_id].players
 
