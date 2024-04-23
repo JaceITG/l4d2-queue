@@ -162,7 +162,7 @@ f"""A **__{gamemode_strs[gamemode]['title']}__** versus game is being set up for
     "Small firearm arsenal, superior pistols, no melee weapons, generally faster-paced than L4D2 Versus with less camping/baiting. The score is" 
     "determined by Survivor HP at the end of a level and a per-map difficulty modifier.") if gamemode == "l4d1" else ""}
 ({gamemode_strs[gamemode]['desc']})\n
-Use the buttons below to join this queue as a player or sub
+Use the buttons below to join this queue as a player or sub\n
 Once 8 players have joined, maps will be voted upon, and teams will be assigned.
 Note:  If 8 players have not joined in two hours, this queue will be remade.  **Do not queue unless you {"own Left 4 Dead 1 and" if gamemode=="l4d1" else ""} have at least two hours available.**\n
 Please report any issues to the owner/developers"""
